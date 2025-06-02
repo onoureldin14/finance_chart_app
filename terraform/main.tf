@@ -1,78 +1,106 @@
-/**
-* Copyright 2024 Google LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
 
-# [START gke_quickstart_autopilot_cluster]
-resource "google_compute_network" "default" {
-  name    = "example-network"
-  project = var.project_id
+###################################################################
+# VPC & Subnet
+###################################################################
 
-  auto_create_subnetworks  = false
-  enable_ula_internal_ipv6 = true
+resource "google_compute_network" "vpc" {
+  name                    = "${var.project_id}-vpc"
+  project                 = var.project_id
+  auto_create_subnetworks = "false"
 }
 
-resource "google_compute_subnetwork" "default" {
-  name    = "example-subnetwork"
-  project = var.project_id
-
-  ip_cidr_range = "10.0.0.0/16"
-  region        = var.region
-
+# Subnet
+resource "google_compute_subnetwork" "subnet" {
+  name             = "${var.project_id}-subnet"
+  project          = var.project_id
+  region           = var.region
+  network          = google_compute_network.vpc.name
+  ip_cidr_range    = "10.10.0.0/24"
   stack_type       = "IPV4_IPV6"
-  ipv6_access_type = "INTERNAL" # Change to "EXTERNAL" if creating an external loadbalancer
-
-  network = google_compute_network.default.id
-  secondary_ip_range {
-    range_name    = "services-range"
-    ip_cidr_range = "192.168.0.0/24"
-  }
-
-  secondary_ip_range {
-    range_name    = "pod-ranges"
-    ip_cidr_range = "192.168.1.0/24"
-  }
+  ipv6_access_type = "EXTERNAL"
 }
 
-resource "google_container_cluster" "default" {
-  name    = "example-autopilot-cluster"
-  project = var.project_id
 
-  location                 = var.region
-  enable_autopilot         = true
-  enable_l4_ilb_subsetting = true
-
-  network    = google_compute_network.default.id
-  subnetwork = google_compute_subnetwork.default.id
-
-  ip_allocation_policy {
-    stack_type                    = "IPV4_IPV6"
-    services_secondary_range_name = google_compute_subnetwork.default.secondary_ip_range[0].range_name
-    cluster_secondary_range_name  = google_compute_subnetwork.default.secondary_ip_range[1].range_name
-  }
-
-  # Set `deletion_protection` to `true` will ensure that one cannot
-  # accidentally delete this instance by use of Terraform.
-  deletion_protection = false
-}
-# [END gke_quickstart_autopilot_cluster]
+###################################################################
+# Google Artifact Registry
+###################################################################
 
 
-resource "google_artifact_registry_repository" "my-repo" {
+resource "google_artifact_registry_repository" "my_repo" {
   location      = var.region
   project       = var.project_id
-  repository_id = "finance-chart-app"
-  description   = "example docker repository"
+  repository_id = "finance-app-repo"
   format        = "DOCKER"
+}
+
+###################################################################
+# Google Service Account and IAM Permissions
+###################################################################
+
+resource "google_service_account" "default" {
+  project      = var.project_id
+  account_id   = "service-account-id"
+  display_name = "Service Account"
+}
+
+resource "google_project_iam_member" "artifact_registry_pull" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.default.email}"
+}
+
+###################################################################
+# Google Cluster and Node Pool
+###################################################################
+
+resource "google_container_cluster" "primary" {
+  name     = local.cluster_name
+  project  = var.project_id
+  location = local.single_zone_location
+
+  # We can't create a cluster with no node pool defined, but we want to only use
+  # separately managed node pools. So we create the smallest possible default
+  # node pool and immediately delete it.
+  remove_default_node_pool = true
+  initial_node_count       = 1
+
+  network             = google_compute_network.vpc.name
+  subnetwork          = google_compute_subnetwork.subnet.name
+  deletion_protection = false
+}
+
+# Separately Managed Node Pool
+resource "google_container_node_pool" "primary_nodes" {
+  name     = google_container_cluster.primary.name
+  project  = var.project_id
+  location = local.single_zone_location
+  cluster  = google_container_cluster.primary.name
+
+  version    = data.google_container_engine_versions.gke_version.release_channel_default_version["STABLE"]
+  node_count = var.gke_num_nodes
+
+  node_config {
+    service_account = google_service_account.default.email
+
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      "https://www.googleapis.com/auth/cloud-platform"
+
+    ]
+
+    labels = {
+      env = var.project_id
+    }
+
+    # preemptible  = true
+    machine_type = "n1-standard-1"
+    tags         = ["gke-node", "${var.project_id}-gke"]
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+  }
 }
