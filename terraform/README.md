@@ -71,7 +71,7 @@ Update with your project settings:
 
 ```hcl
 project_id = "your-project-id"
-region     = "us-central1"
+region     = "europe-west2"
 ```
 
 ---
