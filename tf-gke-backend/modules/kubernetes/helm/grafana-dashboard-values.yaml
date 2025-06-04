@@ -1,0 +1,38 @@
+replicas: 1
+
+service:
+  type: LoadBalancer
+  port: 80
+
+adminUser: admin
+adminPassword: admin  # Consider using a Kubernetes secret in production
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# Optional: Enable persistence
+persistence:
+  enabled: false
+
+# Optional: Disable ingress if you are using LoadBalancer
+ingress:
+  enabled: false
+
+datasources:
+   datasources.yaml:
+         apiVersion: 1
+         datasources:
+         - name: Loki
+           type: loki
+           access: proxy
+           orgId: 1
+           url: http://loki-gateway.default.svc.cluster.local:80
+           basicAuth: false
+           isDefault: false
+           version: 1
+           editable: false
