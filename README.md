@@ -16,7 +16,7 @@ This project is modularized across multiple directories:
 ## 📸 Visual Preview
 
 <p align="center">
-  <img src="https://www.canva.com/design/DAGpbZTABxw/mkI6gNbcWgy-T_Rfxt8ycQ/watch?utm_content=DAGpbZTABxw&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h656fba4c62" alt="Streamlit App Demo" width="600">
+  <img src="./assets/giphy.gif" alt="Streamlit App Demo" width="600">
 </p>
 
 ---
