@@ -16,7 +16,7 @@ This project is modularized across multiple directories:
 ## 📸 Visual Preview
 
 <p align="center">
-  <img src="./assets/giphy.gif" alt="Streamlit App Demo" width="600">
+  <img src="./assets/giffy.gif" alt="Streamlit App Demo" width="600">
 </p>
 
 ---
