@@ -7,6 +7,8 @@ repos:
       - id: check-yaml
         args: [--allow-multiple-documents]
       - id: check-added-large-files
+        exclude: ^.*\.gif$
+
 
   - repo: https://github.com/psf/black
     rev: 23.7.0
@@ -34,6 +36,7 @@ repos:
     rev: v5.0.0
     hooks:
       - id: check-added-large-files
+        exclude: ^.*\.gif$
       - id: check-merge-conflict
       - id: check-vcs-permalinks
       - id: forbid-new-submodules
