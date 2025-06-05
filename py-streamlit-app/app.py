@@ -11,7 +11,10 @@ In the meantime, below is an example of what you can do with
 just a few lines of code:
 """
 
+import json
 import logging
+import random
+import time
 import uuid
 
 import altair as alt
@@ -19,25 +22,38 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "message": record.getMessage(),
+        }
+        if hasattr(record, "session_id"):
+            log_record["session_id"] = record.session_id
+        if hasattr(record, "duration_seconds"):
+            log_record["duration_seconds"] = record.duration_seconds
+        return json.dumps(log_record)
+
+
+handler = logging.StreamHandler()
+handler.setFormatter(JsonFormatter())
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.handlers = [handler]
 
 # Assign a session ID once per user
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
-    logging.info(f"Session started - session_id={st.session_state.session_id}")
+    logger.info("Session started", extra={"session_id": st.session_state.session_id})
 
 st.title("Interactive Spiral Plot")
 
 # Log slider interaction
 num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
 num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
-logging.info(
-    f"Slider updated - session_id={st.session_state.session_id} "
-    f"num_points={num_points} num_turns={num_turns}"
-)
+logger.info("Slider updated", extra={"session_id": st.session_state.session_id})
 
 # Compute spiral
 indices = np.linspace(0, 1, num_points)
@@ -56,11 +72,7 @@ df = pd.DataFrame(
     }
 )
 
-# Log chart display
-logging.info(
-    f"Rendering chart - session_id={st.session_state.session_id} "
-    f"data_points={len(df)}"
-)
+logger.info("Rendering chart", extra={"session_id": st.session_state.session_id})
 
 # Render the chart
 st.altair_chart(
@@ -74,6 +86,23 @@ st.altair_chart(
     )
 )
 
-# Optional: Log button click
-if st.button("Log an event"):
-    logging.info(f"Button clicked - session_id={st.session_state.session_id}")
+# Button for simulated financial analysis
+if st.button("Run financial analysis"):
+    start_time = time.time()
+
+    # Simulate time-series analysis with variable delay
+    simulated_delay = random.uniform(0.5, 3.5)
+    time.sleep(simulated_delay)
+
+    end_time = time.time()
+    duration = round(end_time - start_time, 3)
+
+    st.success(f"Financial analysis completed in {duration} seconds.")
+
+    logger.info(
+        "Financial analysis completed",
+        extra={
+            "session_id": st.session_state.session_id,
+            "duration_seconds": duration,
+        },
+    )

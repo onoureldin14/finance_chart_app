@@ -36,14 +36,14 @@ A simple Streamlit web application that displays the last month's closing prices
 2. Create a virtual environment and activate it:
 
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
+   python3 -m venv path/to/venv
+   source path/to/venv/bin/activate
    ```
 
 3. Install dependencies:
 
    ```bash
-   pip install -r requirements.txt
+   python3 -m pip install -r requirements.txt
    ```
 
 4. Run the Streamlit app:
@@ -54,7 +54,7 @@ A simple Streamlit web application that displays the last month's closing prices
 
 ---
 
-## ▶️ 🐳 Run Locally with Docker
+## ▶️ 🐳 Run Locally with Docker without Pushing
 
 ### Step 1: Build the Docker Image
 ```bash
@@ -65,7 +65,7 @@ docker build -t streamlit-app .
 docker run -p 8501:8501 streamlit-app
 ```
 ---
-## 🐳 Build and Push Docker Image to Google Artifact Registry
+## 🐳 Build and Push Docker Image to DockerHub Registery
 
 ### Step 1: Authenticate Docker
 
@@ -93,11 +93,7 @@ docker run -p 8501:8501 onoureldin14/streamlit-app:latest
 
 Then visit: [http://localhost:8501](http://localhost:8501)
 
-
-
 ---
-
-
 ## 🐳 Build and Push Docker Image to Google Artifact Registry
 
 ### Step 1: Authenticate Docker with Artifact Registry
