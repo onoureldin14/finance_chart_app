@@ -24,3 +24,7 @@ datasources:
           isDefault: false
           version: 1
           editable: false
+        - name: Prometheus
+          type: prometheus
+          access: proxy
+          url: http://prometheus-server.meta.svc.cluster.local:80

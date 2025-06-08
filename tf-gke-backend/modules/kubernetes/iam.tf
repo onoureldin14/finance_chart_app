@@ -4,7 +4,7 @@
 
 resource "google_service_account" "loki" {
   project      = var.project_id
-  account_id   = "gcs-bucket-loki-sa"
+  account_id   = var.loki_service_account_name
   display_name = "Service account for Loki"
 }
 

@@ -1,38 +1,30 @@
-replicas: 1
+---
+persistence:
+  type: pvc
+  enabled: true
+
+# DO NOT DO THIS IN PRODUCTION USECASES
+adminUser: ${GRAFANA_ADMIN_USER}
+adminPassword: ${GRAFANA_ADMIN_PASSWORD}
 
 service:
+  enabled: true
   type: LoadBalancer
-  port: 80
-
-adminUser: admin
-adminPassword: admin  # Consider using a Kubernetes secret in production
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 200m
-    memory: 256Mi
-
-# Optional: Enable persistence
-persistence:
-  enabled: false
-
-# Optional: Disable ingress if you are using LoadBalancer
-ingress:
-  enabled: false
 
 datasources:
-   datasources.yaml:
-         apiVersion: 1
-         datasources:
-         - name: Loki
-           type: loki
-           access: proxy
-           orgId: 1
-           url: http://loki-gateway.default.svc.cluster.local:80
-           basicAuth: false
-           isDefault: false
-           version: 1
-           editable: false
+  datasources.yaml:
+        apiVersion: 1
+        datasources:
+        - name: Loki
+          type: ${LOKI_CHART_NAME}
+          access: proxy
+          orgId: 1
+          url: http://${LOKI_CHART_NAME}-gateway.meta.${MONITORING_NAMESPACE}.cluster.local:80
+          basicAuth: false
+          isDefault: false
+          version: 1
+          editable: false
+        - name: Prometheus
+          type: ${PROMETHEUS_CHART_NAME}
+          access: proxy
+          url: http://${PROMETHEUS_CHART_NAME}-server.${MONITORING_NAMESPACE}.svc.cluster.local:80

@@ -73,24 +73,29 @@ kubectl create namespace prod || echo "$INFO Namespace prod already exists."
 
 # Add and update Helm repo
 helm repo add grafana https://grafana.github.io/helm-charts || echo "$INFO Grafana repo already added."
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || echo "$INFO Prometheus repo already added."
 helm repo update
 
 # Install Loki
 echo "$GEAR Deploying Loki..."
-helm install --values loki-values.yml loki grafana/loki -n meta  || echo "$INFO Loki already installed."
+helm install --values loki-values.yml loki grafana/loki -n meta || echo "$INFO Loki already installed."
 
 # Install Grafana
 echo "$GEAR Deploying Grafana..."
-helm install --values grafana-values.yml grafana grafana/grafana -n meta || echo "$INFO Grafana repo already added."
+helm install --values grafana-values.yml grafana grafana/grafana -n meta || echo "$INFO Grafana already installed."
 
-# Install Alloy (k8s-monitoring)
+# Install Alloy
 echo "$GEAR Deploying Alloy Monitoring..."
 helm install --values k8s-monitoring-values.yml k8s grafana/k8s-monitoring -n meta || echo "$INFO Alloy already installed."
 
-# Port-forward Grafana (background)
+# Install Prometheus
+echo "$GEAR Deploying Prometheus..."
+helm install --values prometheus-values.yaml prometheus prometheus-community/prometheus -n meta || echo "$INFO Prometheus already installed."
+
+# Port-forward Grafana
 echo "$PORT Starting Grafana port-forward on :3000..."
 echo "$INFO Waiting for Grafana pod to be ready..."
-kubectl wait --namespace meta --for=condition=ready pod -l app.kubernetes.io/name=grafana --timeout=120s
+kubectl wait --namespace meta --for=condition=ready pod -l app.kubernetes.io/name=grafana --timeout=360s
 
 POD_NAME=$(kubectl get pods --namespace meta -l "app.kubernetes.io/name=grafana" -o jsonpath="{.items[0].metadata.name}")
 if [ -n "$POD_NAME" ]; then
@@ -100,10 +105,10 @@ else
     echo "$CROSS Grafana pod not found. Port-forwarding skipped."
 fi
 
-# Port-forward Alloy UI (background)
+# Port-forward Alloy UI
 echo "$PORT Starting Alloy UI port-forward on :12345..."
 echo "$INFO Waiting for Alloy UI pod to be ready..."
-kubectl wait --namespace meta --for=condition=ready pod -l app.kubernetes.io/name=alloy-logs --timeout=120s
+kubectl wait --namespace meta --for=condition=ready pod -l app.kubernetes.io/name=alloy-logs --timeout=360s
 
 POD_NAME=$(kubectl get pods --namespace meta -l "app.kubernetes.io/name=alloy-logs" -o jsonpath="{.items[0].metadata.name}")
 if [ -n "$POD_NAME" ]; then
@@ -117,15 +122,29 @@ fi
 echo "$GEAR Deploying Streamlit App..."
 kubectl apply -f k8s-streamlit.yaml -n prod
 
-# Port-forward Streamlit app (background)
+# Port-forward Streamlit app
 echo "$INFO Waiting for Streamlit service to be ready..."
 kubectl wait --namespace prod --for=condition=available --timeout=60s deployment/streamlit || echo "$CROSS Streamlit deployment may not be ready yet."
 
 if kubectl get svc streamlit-service -n prod > /dev/null 2>&1; then
-    kubectl port-forward svc/streamlit-service -n prod 8501:80 &> /dev/null &
-    echo "$PORT Streamlit app port-forward started at :8501"
+    kubectl port-forward svc/streamlit-service -n prod 8501:80 8000:8000 &> /dev/null &
+    echo "$PORT Streamlit app UI is available at http://localhost:8501"
+    echo "$PORT Prometheus metrics are available at http://localhost:8000/metrics"
 else
     echo "$CROSS Streamlit service not found. Port-forwarding skipped."
+fi
+
+# Port-forward Prometheus (background)
+echo "$PORT Starting Prometheus port-forward on :9090..."
+echo "$INFO Waiting for Prometheus pod to be ready..."
+kubectl wait --namespace meta --for=condition=ready pod -l  app.kubernetes.io/name=prometheus  --timeout=360s
+
+POD_NAME=$(kubectl get pods --namespace meta -l "app.kubernetes.io/name=prometheus" -o jsonpath="{.items[0].metadata.name}")
+if [ -n "$POD_NAME" ]; then
+    kubectl port-forward svc/prometheus-server -n meta 9090:80 &> /dev/null &
+    echo "$PORT Prometheus port-forward started at :9090"
+else
+    echo "$CROSS Prometheus pod not found. Port-forwarding skipped."
 fi
 
 echo ""
@@ -135,6 +154,8 @@ echo "$INFO Access your services:"
 echo "   - Grafana:     http://localhost:3000"
 echo "   - Alloy UI:    http://localhost:12345"
 echo "   - Streamlit:   http://localhost:8501"
+echo "   - Prometheus:  http://localhost:9090"
+echo "   - Streamlit Metrics:  http://localhost:8000"
 echo ""
 echo "$INFO Grafana credentials:"
 echo "   - Username: admin"

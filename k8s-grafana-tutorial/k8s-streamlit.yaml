@@ -10,6 +10,10 @@ metadata:
   namespace: prod
   labels:
     app: streamlit
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: "8000"
 spec:
   replicas: 1
   selector:
@@ -24,14 +28,15 @@ spec:
         - name: streamlit
           image: onoureldin14/streamlit-app:latest
           ports:
-            - containerPort: 8501
+          - containerPort: 8501
+          - containerPort: 8000  # Prometheus metrics
           resources:
             requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
               cpu: "100m"
               memory: "128Mi"
-            limits:
-              cpu: "200m"
-              memory: "256Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -41,7 +46,11 @@ metadata:
 spec:
   selector:
     app: streamlit
-  type: LoadBalancer
+  type: ClusterIP
   ports:
-    - port: 80
+    - name: ui
+      port: 80
       targetPort: 8501
+    - name: metrics
+      port: 8000
+      targetPort: 8000

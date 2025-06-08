@@ -1,6 +1,6 @@
 resource "kubernetes_namespace" "streamlit" {
   metadata {
-    name = "prod"
+    name = var.application_namespace
   }
 }
 
@@ -12,7 +12,6 @@ resource "kubernetes_deployment" "streamlit" {
       app = var.name
     }
   }
-
   spec {
     replicas = 1
 
@@ -27,6 +26,11 @@ resource "kubernetes_deployment" "streamlit" {
         labels = {
           app = var.name
         }
+        annotations = {
+          "prometheus.io/scrape" = "true"
+          "prometheus.io/path"   = "/metrics"
+          "prometheus.io/port"   = "8000"
+        }
       }
 
       spec {
@@ -35,6 +39,9 @@ resource "kubernetes_deployment" "streamlit" {
           image = var.docker_image_id
           port {
             container_port = 8501
+          }
+          port {
+            container_port = 8000
           }
           resources {
             requests = {
@@ -54,7 +61,7 @@ resource "kubernetes_deployment" "streamlit" {
 
 resource "kubernetes_service" "streamlit" {
   metadata {
-    name      = "streamlit-service"
+    name      = "${var.name}-service"
     namespace = kubernetes_namespace.streamlit.id
   }
 
@@ -66,8 +73,14 @@ resource "kubernetes_service" "streamlit" {
     type = "LoadBalancer"
 
     port {
+      name        = "ui"
       port        = 80
       target_port = 8501
+    }
+    port {
+      name        = "metrics"
+      port        = 8000
+      target_port = 8000
     }
   }
   depends_on = [kubernetes_deployment.streamlit]
