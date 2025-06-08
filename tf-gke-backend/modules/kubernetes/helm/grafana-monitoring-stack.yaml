@@ -5,15 +5,15 @@ cluster:
 destinations:
   - name: loki
     type: loki
-    url: http://loki-gateway.default.svc.cluster.local/loki/api/v1/push
+    url: http://${LOKI_CHART_NAME}-gateway.${MONITORING_NAMESPACE}.svc.cluster.local/loki/api/v1/push
 
 
 clusterEvents:
   enabled: true
   collector: alloy-logs
   namespaces:
-    - default
-    - prod
+    - ${MONITORING_NAMESPACE}
+    - ${APPLICATION_NAMESPACE}
 
 nodeLogs:
   enabled: false
@@ -26,8 +26,8 @@ podLogs:
   structuredMetadata:
     pod: pod  # Set structured metadata "pod" from label "pod"
   namespaces:
-    - default
-    - prod
+    - ${MONITORING_NAMESPACE}
+    - ${APPLICATION_NAMESPACE}
 
 # Collectors
 alloy-singleton:

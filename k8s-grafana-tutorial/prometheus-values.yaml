@@ -1,0 +1,53 @@
+# prometheus-values.yaml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+alertmanager:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+kube-state-metrics:
+  enabled: true
+
+prometheus-node-exporter:
+  enabled: false
+
+server:
+  persistentVolume:
+    size: 2Gi
+  # Reduce resource usage for local/dev
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+
+  # Create a ServiceMonitor so Prometheus Operator (if used) can discover
+  # Otherwise, use `additionalScrapeConfigs`
+  service:
+    type: ClusterIP
+
+  # Enable scraping custom targets
+extraScrapeConfigs: |
+  - job_name: 'streamlit-app'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+        - streamlit-service.prod.svc.cluster.local:8000

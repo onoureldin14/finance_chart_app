@@ -30,11 +30,10 @@ module "gke" {
 ###################################################################
 
 module "kubernetes" {
-  source             = "./modules/kubernetes"
-  name               = var.name
-  project_id         = var.project_id
-  monitoring_enabled = true
-  docker_image_id    = data.google_artifact_registry_docker_image.streamlit_image.self_link
-  gke_cluster_name   = module.gke.gke_cluster_name
-  depends_on         = [module.gke]
+  source           = "./modules/kubernetes"
+  name             = var.name
+  project_id       = var.project_id
+  docker_image_id  = data.google_artifact_registry_docker_image.streamlit_image.self_link
+  gke_cluster_name = module.gke.gke_cluster_name
+  depends_on       = [module.gke]
 }
