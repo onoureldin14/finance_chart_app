@@ -16,7 +16,19 @@ This project is modularized across multiple directories:
 ## 📸 Visual Preview
 
 <p align="center">
-  <img src="./assets/giffy.gif" alt="Streamlit App Demo" width="600">
+  <img src="./assets/streamlit.gif" alt="Streamlit App Demo" width="600">
+</p>
+
+<p align="center">
+  <img src="./assets/alloy.gif" alt="Grafana Alloy Demo" width="600">
+</p>
+
+<p align="center">
+  <img src="./assets/prometheus.gif" alt="Prometheus Demo" width="600">
+</p>
+
+<p align="center">
+  <img src="./assets/grafana.gif" alt="Grafana Dashboard Demo" width="600">
 </p>
 
 ---

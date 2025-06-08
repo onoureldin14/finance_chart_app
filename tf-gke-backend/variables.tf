@@ -20,3 +20,9 @@ variable "docker_repo_name" {
   type        = string
   default     = "streamlit-app-repo"
 }
+
+variable "docker_image_version" {
+  description = "version of the docker image"
+  type        = string
+  default     = "latest"
+}
